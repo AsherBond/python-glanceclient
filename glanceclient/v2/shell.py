@@ -16,6 +16,7 @@
 import json
 import os
 import sys
+from types import SimpleNamespace
 
 from oslo_utils import strutils
 
@@ -1649,6 +1650,38 @@ def do_cache_list(gc, args):
                    "loadbalanced or catalog endpoints.")
     cached_images = gc.cache.list()
     utils.print_cached_images(cached_images)
+
+
+@utils.arg('id', metavar='<IMAGE_ID>',
+           help=_('ID of the image.'))
+def do_cache_nodes_list(gc, args):
+    """List node reference URLs where an image is cached."""
+    if not gc.endpoint_provided:
+        utils.exit("Direct server endpoint needs to be provided. Do not use "
+                   "loadbalanced or catalog endpoints.")
+    try:
+        nodes = gc.cache.list_cached_nodes(args.id)
+    except exc.HTTPForbidden:
+        msg = _("You are not permitted to list cached nodes for image '%s'.")
+        utils.print_err(msg % args.id)
+        return
+    except exc.HTTPConflict as e:
+        msg = _("'%s': Unable to list cached nodes for image '%s'.")
+        utils.print_err(msg % (e, args.id))
+        return
+    except exc.HTTPNotFound as e:
+        msg = _("'%s': Unable to list cached nodes for image '%s'.")
+        utils.print_err(msg % (e, args.id))
+        return
+    except exc.HTTPNotImplemented:
+        raise
+    except exc.HTTPException as e:
+        msg = _("'%s': Unable to list cached nodes for image '%s'.")
+        utils.print_err(msg % (e, args.id))
+        return
+
+    rows = [SimpleNamespace(node_reference_url=u) for u in nodes]
+    utils.print_list(rows, ['Node Reference URL'])
 
 
 @utils.arg('id', metavar='<IMAGE_ID>', nargs='+',
