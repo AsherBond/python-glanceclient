@@ -4031,3 +4031,91 @@ class ShellV2Test(testtools.TestCase):
             mock_exit.assert_called_once_with(
                 'Direct server endpoint needs to be provided. Do '
                 'not use loadbalanced or catalog endpoints.')
+
+    def _test_cache_clean(self, supported=True, forbidden=False):
+        args = self._make_args({})
+        with mock.patch.object(self.gc.cache, 'clean') as mocked_cache_clean:
+            if supported:
+                mocked_cache_clean.return_value = None
+            else:
+                mocked_cache_clean.side_effect = exc.HTTPNotImplemented
+            if forbidden:
+                mocked_cache_clean.side_effect = exc.HTTPForbidden
+
+            test_shell.do_cache_clean(self.gc, args)
+            if supported:
+                mocked_cache_clean.assert_called_once_with()
+
+    def test_do_cache_clean(self):
+        self._test_cache_clean()
+
+    def test_do_cache_clean_unsupported(self):
+        with mock.patch(
+                'glanceclient.common.utils.print_err') as mock_print_err:
+            self._test_cache_clean(supported=False)
+            mock_print_err.assert_called_once_with(
+                "'HTTP HTTPNotImplemented': Unable to clean the image cache.")
+
+    def test_do_cache_clean_forbidden(self):
+        with mock.patch(
+                'glanceclient.common.utils.print_err') as mock_print_err:
+            self._test_cache_clean(forbidden=True)
+            mock_print_err.assert_called_once_with(
+                "You are not permitted to clean the image cache.")
+
+    def test_do_cache_clean_endpoint_not_provided(self):
+        args = self._make_args({})
+        self.gc.endpoint_provided = False
+        with mock.patch('glanceclient.common.utils.exit') as mock_exit:
+            test_shell.do_cache_clean(self.gc, args)
+            mock_exit.assert_called_once_with(
+                'Direct server endpoint needs to be provided. Do '
+                'not use loadbalanced or catalog endpoints.')
+
+    def _test_cache_prune(self, supported=True, forbidden=False):
+        args = self._make_args({})
+        with mock.patch.object(self.gc.cache, 'prune') as mocked_cache_prune:
+            if supported:
+                mocked_cache_prune.return_value = {
+                    'total_files_pruned': 5,
+                    'total_bytes_pruned': 104857600,
+                }
+            else:
+                mocked_cache_prune.side_effect = exc.HTTPNotImplemented
+            if forbidden:
+                mocked_cache_prune.side_effect = exc.HTTPForbidden
+
+            with mock.patch('builtins.print') as mock_print:
+                test_shell.do_cache_prune(self.gc, args)
+                if supported and not forbidden:
+                    mocked_cache_prune.assert_called_once_with()
+                    mock_print.assert_called_once_with(
+                        'Pruned 5 file(s), 104857600 byte(s).')
+
+    def test_do_cache_prune(self):
+        self._test_cache_prune()
+
+    def test_do_cache_prune_unsupported(self):
+        with mock.patch(
+                'glanceclient.common.utils.print_err') as mock_print_err:
+            self._test_cache_prune(supported=False)
+            mock_print_err.assert_called_once_with(
+                "'HTTP HTTPNotImplemented': Unable to prune the image cache.")
+
+    def test_do_cache_prune_forbidden(self):
+        with mock.patch(
+                'glanceclient.common.utils.print_err') as mock_print_err:
+            self._test_cache_prune(forbidden=True)
+            mock_print_err.assert_called_once_with(
+                "You are not permitted to prune the image cache.")
+
+    def test_do_cache_prune_endpoint_not_provided(self):
+        args = self._make_args({})
+        self.gc.endpoint_provided = False
+        with mock.patch('glanceclient.common.utils.exit') as mock_exit:
+            mock_exit.side_effect = SystemExit
+            self.assertRaises(SystemExit,
+                              test_shell.do_cache_prune, self.gc, args)
+            mock_exit.assert_called_once_with(
+                'Direct server endpoint needs to be provided. Do not use '
+                'loadbalanced or catalog endpoints.')
