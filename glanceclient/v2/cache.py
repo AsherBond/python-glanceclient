@@ -60,3 +60,10 @@ class Controller(object):
             url = '/v2/cache/%s' % image_id
             resp, body = self.http_client.put(url)
             return body, resp
+
+    @utils.add_req_id_to_object()
+    def list_cached_nodes(self, image_id):
+        if self.is_supported('v2.14'):
+            url = '/v2/cache/nodes/%s' % image_id
+            resp, body = self.http_client.get(url)
+            return body, resp
