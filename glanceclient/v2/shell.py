@@ -1643,6 +1643,41 @@ def do_cache_delete(gc, args):
             utils.print_err(msg)
 
 
+def do_cache_clean(gc, args):
+    """Clean invalid and stalled cached images."""
+    if not gc.endpoint_provided:
+        utils.exit("Direct server endpoint needs to be provided. Do not use "
+                   "loadbalanced or catalog endpoints.")
+    try:
+        gc.cache.clean()
+    except exc.HTTPForbidden:
+        msg = _("You are not permitted to clean the image cache.")
+        utils.print_err(msg)
+    except exc.HTTPException as e:
+        msg = _("'%s': Unable to clean the image cache." % e)
+        utils.print_err(msg)
+
+
+def do_cache_prune(gc, args):
+    """Prune cached images to reduce cache size."""
+    if not gc.endpoint_provided:
+        utils.exit("Direct server endpoint needs to be provided. Do not use "
+                   "loadbalanced or catalog endpoints.")
+    try:
+        result = gc.cache.prune()
+        if result:
+            print(_("Pruned %(files)d file(s), %(bytes)d byte(s).") % {
+                'files': result.get('total_files_pruned', 0),
+                'bytes': result.get('total_bytes_pruned', 0),
+            })
+    except exc.HTTPForbidden:
+        msg = _("You are not permitted to prune the image cache.")
+        utils.print_err(msg)
+    except exc.HTTPException as e:
+        msg = _("'%s': Unable to prune the image cache." % e)
+        utils.print_err(msg)
+
+
 def do_cache_list(gc, args):
     """Get cache state."""
     if not gc.endpoint_provided:

@@ -70,6 +70,21 @@ data_fixtures = {
             ['http://node1.example', 'http://node2.example'],
         ),
     },
+    '/v2/cache/clean': {
+        'POST': (
+            {},
+            '',
+        ),
+    },
+    '/v2/cache/prune': {
+        'POST': (
+            {},
+            {
+                'total_files_pruned': 5,
+                'total_bytes_pruned': 104857600,
+            },
+        ),
+    },
 }
 
 
@@ -176,3 +191,31 @@ class TestCacheController(testtools.TestCase):
         self.assertRaises(exc.HTTPNotImplemented,
                           self.controller.list_cached_nodes,
                           '3a4560a1-e585-443e-9b39-553b46ec92d1')
+
+    @mock.patch.object(common_utils, 'has_version')
+    def test_cache_clean(self, mock_has_version):
+        mock_has_version.return_value = True
+        self.controller.clean()
+        expect = [('POST', '/v2/cache/clean', {}, None)]
+        self.assertEqual(expect, self.api.calls)
+
+    @mock.patch.object(common_utils, 'has_version')
+    def test_cache_prune(self, mock_has_version):
+        mock_has_version.return_value = True
+        result = self.controller.prune()
+        expect = [('POST', '/v2/cache/prune', {}, None)]
+        self.assertEqual(expect, self.api.calls)
+        self.assertEqual(5, result['total_files_pruned'])
+        self.assertEqual(104857600, result['total_bytes_pruned'])
+
+    @mock.patch.object(common_utils, 'has_version')
+    def test_cache_clean_not_supported(self, mock_has_version):
+        mock_has_version.return_value = False
+        self.assertRaises(exc.HTTPNotImplemented,
+                          self.controller.clean)
+
+    @mock.patch.object(common_utils, 'has_version')
+    def test_cache_prune_not_supported(self, mock_has_version):
+        mock_has_version.return_value = False
+        self.assertRaises(exc.HTTPNotImplemented,
+                          self.controller.prune)
