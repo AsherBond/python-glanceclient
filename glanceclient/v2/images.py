@@ -419,12 +419,10 @@ class Controller(object):
         if backend is not None:
             headers['x-image-meta-store'] = backend
 
-        image = self.model()
-        for (key, value) in kwargs.items():
-            try:
-                setattr(image, key, value)
-            except warlock.InvalidOperation as e:
-                raise TypeError(str(e))
+        try:
+            image = self.model(**kwargs)
+        except ValueError as e:
+            raise TypeError(str(e))
 
         resp, body = self.http_client.post(url, headers=headers, data=image)
         # NOTE(esheffield): remove 'self' for now until we have an elegant
