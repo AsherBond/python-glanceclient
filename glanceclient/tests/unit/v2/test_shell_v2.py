@@ -38,7 +38,6 @@ original_schema_args = utils.schema_args
 
 # Set our own decorator that calls the original but with simulated schema
 def schema_args(schema_getter, omit=None):
-    global original_schema_args
     # We only add the 2 arguments that are required by image-create
     my_schema_getter = lambda: {
         'properties': {
