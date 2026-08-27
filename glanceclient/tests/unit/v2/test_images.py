@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import errno
 import hashlib
 import testtools
@@ -1033,6 +1034,29 @@ class TestController(testtools.TestCase):
         }
         with testtools.ExpectedException(TypeError):
             self.controller.create(**properties)
+
+    def test_create_with_required_schema(self):
+        required_schema = copy.deepcopy(schema_fixtures)
+        required_schema['image']['GET'][1]['required'] = ["name"]
+        schema_api = utils.FakeSchemaAPI(required_schema)
+        controller = base.BaseController(self.api, schema_api,
+                                         images.Controller)
+
+        # With the required property
+        properties = {
+            "id": "3a4560a1-e585-443e-9b39-553b46ec92d1",
+            "name": "image-1"
+        }
+        ret = controller.create(**properties)
+        self.assertEqual("3a4560a1-e585-443e-9b39-553b46ec92d1", ret.id)
+        self.assertEqual("image-1", ret.name)
+
+        # without the required property
+        properties = {
+            "id": "3a4560a1-e585-443e-9b39-553b46ec92d1",
+        }
+        with testtools.ExpectedException(TypeError):
+            controller.create(**properties)
 
     def test_delete_image(self):
         self.controller.delete('87b634c1-f893-33c9-28a9-e5673c99239a')
