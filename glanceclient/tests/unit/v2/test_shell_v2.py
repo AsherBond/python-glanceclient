@@ -186,6 +186,24 @@ class ShellV2Test(testtools.TestCase):
         ]
     }
 
+    import_info_detail_response = {
+        "import-methods": {
+            "description": "Import methods available.",
+            "type": "array",
+            "value": ["glance-direct", "web-download"]
+        },
+        "plugins": [
+            {
+                "name": "image_conversion",
+                "properties": {"output_format": "raw"}
+            },
+            {
+                "name": "image_decompression",
+                "properties": {}
+            }
+        ]
+    }
+
     def test_do_stores_info(self):
         args = self._make_args({'detail': False})
         with mock.patch.object(self.gc.images,
@@ -196,6 +214,29 @@ class ShellV2Test(testtools.TestCase):
 
             mocked_list.assert_called_once_with()
             utils.print_dict.assert_called_once_with(self.stores_info_response)
+
+    def test_do_import_info(self):
+        args = self._make_args({'detail': False})
+        with mock.patch.object(self.gc.images,
+                               'get_import_info') as mocked_info:
+            mocked_info.return_value = self.import_info_response
+
+            test_shell.do_import_info(self.gc, args)
+
+            mocked_info.assert_called_once_with()
+            utils.print_dict.assert_called_once_with(self.import_info_response)
+
+    def test_do_import_info_with_detail(self):
+        args = self._make_args({'detail': True})
+        with mock.patch.object(self.gc.images,
+                               'get_import_info_detail') as mocked_info:
+            mocked_info.return_value = self.import_info_detail_response
+
+            test_shell.do_import_info(self.gc, args)
+
+            mocked_info.assert_called_once_with()
+            utils.print_dict.assert_called_once_with(
+                self.import_info_detail_response)
 
     @mock.patch('glanceclient.common.utils.exit')
     @mock.patch('sys.stdin', autospec=True)

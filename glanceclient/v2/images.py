@@ -331,6 +331,13 @@ class Controller(object):
         return body, resp
 
     @utils.add_req_id_to_object()
+    def get_import_info_detail(self):
+        """Get detailed import info from discovery endpoint."""
+        url = '/v2/info/import/detail'
+        resp, body = self.http_client.get(url)
+        return body, resp
+
+    @utils.add_req_id_to_object()
     def get_stores_info(self):
         """Get available stores info from discovery endpoint."""
         url = '/v2/info/stores'

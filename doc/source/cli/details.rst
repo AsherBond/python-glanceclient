@@ -552,10 +552,15 @@ glance import-info
 
 .. code-block:: console
 
-   usage: glance import-info
+   usage: glance import-info [--detail]
 
 Prints the import methods available from Glance, or a message
 if the target Glance does not support image import.
+
+**Optional arguments:**
+
+``--detail``
+  Shows the configured import plugins and their details. Admin only.
 
 .. _glance_image-stage:
 

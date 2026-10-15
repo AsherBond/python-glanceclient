@@ -73,6 +73,28 @@ data_fixtures = {
             },
         ),
     },
+    '/v2/info/import/detail': {
+        'GET': (
+            {},
+            {
+                'import-methods': {
+                    'description': 'Import methods available.',
+                    'type': 'array',
+                    'value': ['glance-direct', 'web-download']
+                },
+                'plugins': [
+                    {
+                        'name': 'image_conversion',
+                        'properties': {'output_format': 'raw'}
+                    },
+                    {
+                        'name': 'image_decompression',
+                        'properties': {}
+                    }
+                ]
+            },
+        ),
+    },
     '/v2/images?limit=%d' % images.DEFAULT_PAGE_SIZE: {
         'GET': (
             {},
@@ -755,6 +777,19 @@ class TestController(testtools.TestCase):
             image_tasks = self.controller.get_associated_image_tasks(
                 '3a4560a1-e585-443e-9b39-553b46ec92d1')
             self.assertEqual(1, len(image_tasks['tasks']))
+
+    def test_get_import_info_detail(self):
+        import_info = self.controller.controller.get_import_info_detail()
+        self.assertEqual(
+            ['glance-direct', 'web-download'],
+            import_info.wrapped['import-methods']['value'])
+        self.assertEqual(
+            ['image_conversion', 'image_decompression'],
+            [plugin['name'] for plugin in import_info.wrapped['plugins']])
+        self.assertEqual(['req-1234'], import_info.request_ids)
+        self.assertEqual(
+            [('GET', '/v2/info/import/detail', {}, None)],
+            self.api.calls)
 
     def test_image_tasks_not_supported(self):
         with mock.patch.object(common_utils,
